@@ -90,6 +90,7 @@ def _redirect_uri() -> str:
     """Callback URL that Google will redirect to after consent."""
     # The callback is served by this backend, not the frontend
     backend_url = os.environ.get("BACKEND_URL", "http://localhost:8000")
+    print("============================backend uri rediret ==============", backend_url)
     return f"{backend_url}/auth/callback"
 
 
