@@ -4,8 +4,8 @@
  */
 
 import useSWR from 'swr'
-import type { AnalyticsStats } from '@/types'
-import { getAnalyticsStats } from '@/services/api'
+import type { AnalyticsStats, DailyMetrics } from '@/types'
+import { getAnalyticsStats, getDailyMetrics } from '@/services/api'
 
 export function useAnalytics(period: 'week' | 'month' = 'week') {
   const { data, error, isLoading } = useSWR<AnalyticsStats>(
@@ -15,4 +15,14 @@ export function useAnalytics(period: 'week' | 'month' = 'week') {
   )
 
   return { stats: data ?? null, isLoading, error }
+}
+
+export function useDailyMetrics(period: 'week' | 'month' = 'week') {
+  const { data, error, isLoading } = useSWR<DailyMetrics[]>(
+    `/analytics/daily?period=${period}`,
+    () => getDailyMetrics(period),
+    { revalidateOnFocus: false },
+  )
+
+  return { dailyData: data ?? [], isLoading, error }
 }

@@ -50,5 +50,5 @@ for key, count in summary.items():
     print(f"  {key:20s}: {count}")
 print()
 print("Demo user credentials:")
-print("  Email: demo@cloneyourself.ai")
+print("  Email: 1ms24ci402@msrit.edu")
 print("  (Sign in via Google OAuth with this email to see demo data)")

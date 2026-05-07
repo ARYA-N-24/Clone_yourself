@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.auth import get_current_user, get_db
-from backend.schemas.pydantic_schemas import DashboardPayload, User
+from backend.schemas.pydantic_schemas import DashboardPayload, User, DailyBrief
 from backend.services.analytics_service import AnalyticsService
 from backend.services.behavior_engine import BehaviorEngine
 from backend.services.calendar_service import CalendarService
@@ -130,3 +130,22 @@ async def get_dashboard(
         len(payload.suggested_actions),
     )
     return payload
+
+
+@router.get(
+    "/brief",
+    response_model=DailyBrief,
+    summary="Get AI-generated daily brief",
+)
+async def get_daily_brief(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> DailyBrief:
+    """
+    Generate and return the AI daily brief for the authenticated user.
+    """
+    user_id = str(current_user.id)
+    orchestrator = _make_task_orchestrator(db)
+    
+    brief = await orchestrator.generate_daily_brief(user_id)
+    return brief

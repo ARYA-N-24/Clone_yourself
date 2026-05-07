@@ -9,7 +9,7 @@ import { getServerSession } from 'next-auth/next'
 import { authOptions } from './api/auth/[...nextauth]'
 import Navbar from '@/components/Navbar'
 import AnalyticsWidget from '@/components/AnalyticsWidget'
-import { useAnalytics } from '@/hooks/useAnalytics'
+import { useAnalytics, useDailyMetrics } from '@/hooks/useAnalytics'
 import {
   LineChart,
   Line,
@@ -29,22 +29,12 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
   return { props: {} }
 }
 
-// Generate mock time-series data for the past 7 days
-function generateWeeklyData() {
-  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-  return days.map((day) => ({
-    day,
-    replies: Math.floor(Math.random() * 8),
-    events: Math.floor(Math.random() * 4),
-    classified: Math.floor(Math.random() * 15),
-  }))
-}
-
-const weeklyData = generateWeeklyData()
-
 export default function AnalyticsPage() {
   const [period, setPeriod] = useState<'week' | 'month'>('week')
-  const { stats, isLoading } = useAnalytics(period)
+  const { stats, isLoading: statsLoading } = useAnalytics(period)
+  const { dailyData, isLoading: dailyLoading } = useDailyMetrics(period)
+
+  const isLoading = statsLoading || dailyLoading
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -95,7 +85,7 @@ export default function AnalyticsPage() {
           </h2>
           <div className="bg-white rounded-lg border border-gray-200 p-4">
             <ResponsiveContainer width="100%" height={240}>
-              <LineChart data={weeklyData}>
+              <LineChart data={dailyData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis
                   dataKey="day"
@@ -111,6 +101,14 @@ export default function AnalyticsPage() {
                 />
                 <Tooltip contentStyle={{ fontSize: 12, borderRadius: 6 }} />
                 <Legend wrapperStyle={{ fontSize: 12 }} />
+                <Line
+                  type="monotone"
+                  dataKey="actions"
+                  stroke="#f59e0b"
+                  strokeWidth={3}
+                  dot={{ r: 4 }}
+                  name="Actions Automated"
+                />
                 <Line
                   type="monotone"
                   dataKey="replies"

@@ -10,6 +10,7 @@ import { createCalendarEvent } from '@/services/api'
 interface CalendarSuggestionPanelProps {
   slots: MeetingSlot[]
   attendees?: string[]
+  emailId?: string
   onEventCreated?: (slotIndex: number) => void
 }
 
@@ -39,6 +40,7 @@ function ConfidenceBadge({ score }: { score: number }) {
 export default function CalendarSuggestionPanel({
   slots,
   attendees = [],
+  emailId,
   onEventCreated,
 }: CalendarSuggestionPanelProps) {
   const [confirmedIndex, setConfirmedIndex] = useState<number | null>(null)
@@ -52,7 +54,7 @@ export default function CalendarSuggestionPanel({
     setLoadingIndex(index)
     setError('')
     try {
-      await createCalendarEvent(slot, attendees)
+      await createCalendarEvent(slot, attendees, emailId)
       setConfirmedIndex(index)
       onEventCreated?.(index)
     } catch {

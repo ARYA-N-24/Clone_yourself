@@ -85,6 +85,14 @@ export interface AnalyticsStats {
   eventsCreated: number
 }
 
+export interface DailyMetrics {
+  day: string
+  replies: number
+  events: number
+  classified: number
+  actions: number
+}
+
 // ─── Daily Brief ─────────────────────────────────────────────────────────────
 
 export interface DailyBrief {

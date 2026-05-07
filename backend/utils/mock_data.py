@@ -217,8 +217,8 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
     if existing_user is None:
         demo_user = User(
             id=demo_user_id,
-            email="demo@cloneyourself.ai",
-            name="Demo User",
+            email="1ms24ci402@msrit.edu",
+            name="Krishna Umesh Naik",
             picture_url=None,
         )
         db_session.add(demo_user)
@@ -253,7 +253,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             thread_id="demo_thread_001",
             subject="Can we meet next week to discuss the Q3 roadmap?",
             sender="alice.johnson@example.com",
-            recipient="demo@cloneyourself.ai",
+            recipient="1ms24ci402@msrit.edu",
             body_text="Hi, I'd love to find time next week to go over the Q3 roadmap. Would Monday or Tuesday afternoon work?",
             received_at=now - timedelta(hours=2),
             classification="urgent",
@@ -267,7 +267,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             thread_id="demo_thread_002",
             subject="Action required: Review and sign the updated NDA",
             sender="legal@partnerco.com",
-            recipient="demo@cloneyourself.ai",
+            recipient="1ms24ci402@msrit.edu",
             body_text="Please review the attached NDA and return a signed copy by end of business Friday.",
             received_at=now - timedelta(hours=5),
             classification="normal",
@@ -281,7 +281,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             thread_id="demo_thread_003",
             subject="This week in AI: GPT-5 rumours and more",
             sender="newsletter@aiweekly.io",
-            recipient="demo@cloneyourself.ai",
+            recipient="1ms24ci402@msrit.edu",
             body_text="Welcome to this week's AI Weekly digest! Highlights from NeurIPS 2024 workshops.",
             received_at=now - timedelta(hours=8),
             classification="low",
@@ -295,7 +295,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             thread_id="demo_thread_004",
             subject="Follow up on the investor deck",
             sender="investor@venturecap.com",
-            recipient="demo@cloneyourself.ai",
+            recipient="1ms24ci402@msrit.edu",
             body_text="Just checking in on the seed round deck. Any updates on the timeline?",
             received_at=now - timedelta(days=1),
             classification="urgent",
@@ -309,7 +309,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             thread_id="demo_thread_005",
             subject="Your monthly SaaS subscription receipt",
             sender="billing@saastool.com",
-            recipient="demo@cloneyourself.ai",
+            recipient="1ms24ci402@msrit.edu",
             body_text="Thank you for your payment of $49.00 for the Pro plan. Your next billing date is August 15.",
             received_at=now - timedelta(days=2),
             classification="low",
@@ -367,7 +367,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             title="Daily Stand-up",
             start_time=now.replace(hour=9, minute=0, second=0, microsecond=0) + timedelta(days=1),
             end_time=now.replace(hour=9, minute=15, second=0, microsecond=0) + timedelta(days=1),
-            attendees=["demo@cloneyourself.ai", "alice.johnson@example.com"],
+            attendees=["1ms24ci402@msrit.edu"],
             source_email_id=None,
             created_by_ai=False,
         ),
@@ -378,7 +378,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             title="Q3 Roadmap Planning — Alice & Demo",
             start_time=now.replace(hour=14, minute=0, second=0, microsecond=0) + timedelta(days=3),
             end_time=now.replace(hour=14, minute=30, second=0, microsecond=0) + timedelta(days=3),
-            attendees=["demo@cloneyourself.ai", "alice.johnson@example.com"],
+            attendees=["1ms24ci402@msrit.edu"],
             source_email_id=email_ids[0],
             created_by_ai=True,
         ),
@@ -389,7 +389,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
             title="Investor Update Call",
             start_time=now.replace(hour=16, minute=0, second=0, microsecond=0) + timedelta(days=5),
             end_time=now.replace(hour=17, minute=0, second=0, microsecond=0) + timedelta(days=5),
-            attendees=["demo@cloneyourself.ai", "investor@venturecap.com"],
+            attendees=["1ms24ci402@msrit.edu"],
             source_email_id=None,
             created_by_ai=False,
         ),
@@ -442,7 +442,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
     ]
 
     for i, (event_type, time_saved) in enumerate(analytics_templates):
-        ae_id = _uuid.UUID(f"aaaaaaaa-0000-0000-0000-00000000000{i + 1}")
+        ae_id = _uuid.UUID(f"aaaaaaaa-0000-0000-0000-{i + 1:012x}")
         if db_session.get(AnalyticsEvent, ae_id) is None:
             db_session.add(
                 AnalyticsEvent(

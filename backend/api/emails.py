@@ -192,6 +192,56 @@ async def generate_reply(
 
 
 @router.post(
+    "/{email_id}/manual-draft",
+    response_model=ReplyDraft,
+    summary="Create a manual reply draft",
+)
+async def create_manual_draft(
+    email_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ReplyDraft:
+    """
+    Create an empty reply draft for the given email, allowing the user
+    to write their own reply from scratch.
+    """
+    user_id = str(current_user.id)
+    email_service = _make_email_service(db)
+
+    draft = await email_service.create_manual_draft(user_id, str(email_id), "")
+
+    logger.info(
+        "POST /emails/%s/manual-draft — user=%s, draft_id=%s",
+        email_id,
+        user_id,
+        draft.id,
+    )
+    return draft
+
+
+@router.put(
+    "/drafts/{draft_id}",
+    response_model=ReplyDraft,
+    summary="Update an existing reply draft",
+)
+async def update_draft(
+    draft_id: UUID,
+    body: dict,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> ReplyDraft:
+    """
+    Update the text of a reply draft before sending it.
+    The body should contain ``{"draft_text": "..."}``.
+    """
+    user_id = str(current_user.id)
+    email_service = _make_email_service(db)
+    text = body.get("draft_text", "")
+
+    return await email_service.update_reply_draft(user_id, str(draft_id), text)
+
+
+@router.post(
     "/{email_id}/send-reply",
     summary="Send an existing reply draft",
 )

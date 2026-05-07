@@ -281,3 +281,95 @@ class AnalyticsService:
         )
 
         return counts
+
+    # ------------------------------------------------------------------
+    # get_daily_metrics
+    # ------------------------------------------------------------------
+
+    async def get_daily_metrics(
+        self, user_id: str, period: str = "week"
+    ) -> list[DailyMetrics]:
+        """
+        Return daily activity counts for the given period.
+
+        Args:
+            user_id: UUID string of the user.
+            period: "week" (last 7 days, default) or "month" (last 30 days).
+
+        Returns:
+            List of DailyMetrics objects, one per day in the period.
+        """
+        from backend.schemas.pydantic_schemas import DailyMetrics
+
+        user_uuid = UUID(user_id)
+        since = _period_start(period)
+        days_limit = _PERIOD_DAYS.get(period, 7)
+
+        # Query counts grouped by day and type
+        # We use cast to Date for better compatibility and matching
+        from sqlalchemy import cast, Date
+        day_label = cast(AnalyticsEventORM.created_at, Date)
+        
+        stmt = (
+            select(
+                day_label.label("day"),
+                func.count()
+                .filter(AnalyticsEventORM.event_type == "reply_sent")
+                .label("replies"),
+                func.count()
+                .filter(AnalyticsEventORM.event_type == "event_created")
+                .label("events"),
+                func.count()
+                .filter(AnalyticsEventORM.event_type == "email_classified")
+                .label("classified"),
+                func.count()
+                .filter(AnalyticsEventORM.event_type == "followup_sent")
+                .label("followups"),
+            )
+            .where(
+                AnalyticsEventORM.user_id == user_uuid,
+                AnalyticsEventORM.created_at >= since,
+            )
+            .group_by(day_label)
+            .order_by(day_label.asc())
+        )
+
+        result = await self._session.execute(stmt)
+        rows = result.all()
+
+        # Build a map of existing data
+        # row.day will be a date object because of the cast
+        data_map = {
+            row.day: {
+                "replies": row.replies,
+                "events": row.events,
+                "classified": row.classified,
+                "actions": row.replies + row.events + row.followups,
+            }
+            for row in rows
+        }
+
+        # Fill in missing days with zeros so the chart is continuous
+        metrics_list: list[DailyMetrics] = []
+        now = datetime.utcnow().date()
+        for i in range(days_limit - 1, -1, -1):
+            d = now - timedelta(days=i)
+            day_data = data_map.get(
+                d,
+                {"replies": 0, "events": 0, "classified": 0, "actions": 0},
+            )
+
+            # Format day as Mon, Tue, etc. for the chart
+            day_label = d.strftime("%a")
+
+            metrics_list.append(
+                DailyMetrics(
+                    day=day_label,
+                    replies=day_data["replies"],
+                    events=day_data["events"],
+                    classified=day_data["classified"],
+                    actions=day_data["actions"],
+                )
+            )
+
+        return metrics_list

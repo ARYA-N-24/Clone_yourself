@@ -29,6 +29,7 @@ from fastapi.responses import RedirectResponse
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from google_auth_oauthlib.flow import Flow
 from jose import JWTError, jwt
+from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
@@ -259,6 +260,75 @@ async def google_oauth_redirect() -> RedirectResponse:
 # ---------------------------------------------------------------------------
 # Route: GET /auth/callback
 # ---------------------------------------------------------------------------
+
+class NextAuthRequest(BaseModel):
+    email: str
+    name: str
+    picture_url: Optional[str] = None
+    access_token: str
+    refresh_token: str
+    expires_at: Optional[int] = None
+
+@router.post("/nextauth", summary="Sync NextAuth tokens and get backend JWT")
+async def nextauth_sync(
+    body: NextAuthRequest,
+    db: AsyncSession = Depends(get_db),
+) -> TokenResponse:
+    """
+    Receive Google tokens from NextAuth, upsert the user, encrypt and store
+    the tokens, and issue a backend JWT.
+    """
+    # Upsert user
+    result = await db.execute(select(User).where(User.email == body.email))
+    db_user = result.scalar_one_or_none()
+
+    if db_user is None:
+        db_user = User(email=body.email, name=body.name, picture_url=body.picture_url)
+        db.add(db_user)
+        await db.flush()  # populate db_user.id
+    else:
+        db_user.name = body.name
+        if body.picture_url:
+            db_user.picture_url = body.picture_url
+
+    # Encrypt tokens before storing
+    encrypted_access = encrypt_token(body.access_token)
+    encrypted_refresh = encrypt_token(body.refresh_token) if body.refresh_token else encrypt_token("")
+
+    token_expiry = datetime.now(tz=timezone.utc) + timedelta(hours=1)
+    if body.expires_at:
+        token_expiry = datetime.fromtimestamp(body.expires_at, tz=timezone.utc)
+
+    # Upsert oauth_tokens
+    token_result = await db.execute(
+        select(OAuthToken).where(OAuthToken.user_id == db_user.id)
+    )
+    db_token = token_result.scalar_one_or_none()
+
+    if db_token is None:
+        db_token = OAuthToken(
+            user_id=db_user.id,
+            access_token=encrypted_access,
+            refresh_token=encrypted_refresh,
+            token_expiry=token_expiry,
+            scopes=_GOOGLE_SCOPES,
+        )
+        db.add(db_token)
+    else:
+        db_token.access_token = encrypted_access
+        # Only update refresh token if a new one is provided by NextAuth
+        if body.refresh_token:
+            db_token.refresh_token = encrypted_refresh
+        db_token.token_expiry = token_expiry
+        db_token.scopes = _GOOGLE_SCOPES
+        db_token.updated_at = datetime.now(tz=timezone.utc)
+
+    await db.commit()
+
+    # Issue backend JWT
+    jwt_token = _create_jwt(str(db_user.id), db_user.email)
+    return TokenResponse(access_token=jwt_token)
+
 
 @router.get("/callback", summary="Handle Google OAuth callback")
 async def google_oauth_callback(

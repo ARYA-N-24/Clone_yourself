@@ -182,6 +182,8 @@ class DecisionEngine:
                 self._log_token_usage(method, response.usage)
                 return response.choices[0].message.content or ""
             except openai.RateLimitError as exc:
+                if "insufficient_quota" in str(exc):
+                    raise
                 last_exc = exc
                 delay = _BACKOFF_DELAYS[attempt]
                 logger.warning(
@@ -266,7 +268,8 @@ class DecisionEngine:
                 response_format={"type": "json_object"},
             )
         except openai.RateLimitError:
-            logger.error("[%s] All retries exhausted; returning default 'normal'.", method)
+            if not getattr(self.__class__, "_quota_exhausted", False):
+                logger.error("[%s] All retries exhausted; returning default 'normal'.", method)
             return "normal"
         except openai.OpenAIError as exc:
             logger.error("[%s] OpenAI error: %s; returning default 'normal'.", method, exc)
@@ -328,12 +331,16 @@ class DecisionEngine:
 
         user_prompt = f"Reply to this email:\n\n{body}"
 
-        raw = await self._call_openai(
-            method=method,
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            temperature=0.7,
-        )
+        try:
+            raw = await self._call_openai(
+                method=method,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=0.7,
+            )
+        except openai.OpenAIError as exc:
+            logger.error("[%s] OpenAI error: %s; returning default error draft.", method, exc)
+            raw = "Error generating reply: OpenAI API limit reached or unavailable."
 
         return ReplyDraft(
             id=uuid.uuid4(),
@@ -502,15 +509,23 @@ class DecisionEngine:
 
         user_prompt = "Generate the daily brief based on the context above."
 
-        raw = await self._call_openai(
-            method=method,
-            system_prompt=system_prompt,
-            user_prompt=user_prompt,
-            temperature=0.7,
-            response_format={"type": "json_object"},
-        )
-
-        parsed = self._parse_json(raw, method)
+        try:
+            raw = await self._call_openai(
+                method=method,
+                system_prompt=system_prompt,
+                user_prompt=user_prompt,
+                temperature=0.7,
+                response_format={"type": "json_object"},
+            )
+            parsed = self._parse_json(raw, method)
+        except (openai.OpenAIError, ValueError) as exc:
+            logger.error("[%s] Failed to generate brief: %s; returning default fallback.", method, exc)
+            return DailyBrief(
+                urgent_items=["Unable to generate AI brief.", "OpenAI API quota exceeded or unavailable.", "Please check your OpenAI billing details."],
+                followups=["Unable to generate follow-ups.", "API limits reached."],
+                risk="API Limits Reached. The AI features are temporarily unavailable.",
+                generated_at=datetime.utcnow(),
+            )
 
         # Validate structure — enforce exactly 3 urgent items, 2 followups, 1 risk
         urgent_items: list[str] = list(parsed.get("urgent_items", []))  # type: ignore[union-attr]

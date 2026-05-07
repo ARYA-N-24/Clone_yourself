@@ -179,21 +179,24 @@ class TaskOrchestrator:
         logger.info("Building dashboard for user %s.", user_id)
 
         # ----------------------------------------------------------------
-        # Concurrent fetch: emails, analytics stats, and daily brief
-        # (Requirement 2.4 — fetch concurrently, not sequentially)
+        # Sequential fetch: emails, analytics stats, and daily brief
+        # (Using sequential fetch to prevent asyncpg InterfaceError on shared session)
         # ----------------------------------------------------------------
-        emails_task = self._email_svc.fetch_emails(user_id)
-        analytics_task = self._analytics_svc.get_dashboard_stats(user_id)
-        followup_task = self._followup_agent.check_pending_followups(user_id, self._session)
-
-        results = await asyncio.gather(
-            emails_task,
-            analytics_task,
-            followup_task,
-            return_exceptions=True,
-        )
-
-        emails_result, analytics_result, followup_result = results
+        
+        try:
+            emails_result = await self._email_svc.fetch_emails(user_id)
+        except Exception as e:
+            emails_result = e
+            
+        try:
+            analytics_result = await self._analytics_svc.get_dashboard_stats(user_id)
+        except Exception as e:
+            analytics_result = e
+            
+        try:
+            followup_result = await self._followup_agent.check_pending_followups(user_id, self._session)
+        except Exception as e:
+            followup_result = e
 
         # ----------------------------------------------------------------
         # Handle partial failures gracefully (Requirement 2.2)
@@ -238,11 +241,9 @@ class TaskOrchestrator:
         else:
             followup_suggestions = followup_result  # type: ignore[assignment]
 
-        # ----------------------------------------------------------------
-        # Filter priority emails (urgent + normal) — Requirement 2.1
-        # ----------------------------------------------------------------
+        # Filter priority emails (urgent + normal) that haven't been replied to — Requirement 2.1
         priority_emails = [
-            e for e in all_emails if e.classification in ("urgent", "normal")
+            e for e in all_emails if e.classification in ("urgent", "normal") and not e.is_replied
         ]
 
         # ----------------------------------------------------------------
@@ -443,23 +444,26 @@ class TaskOrchestrator:
         """
         logger.info("Generating daily brief for user %s.", user_id)
 
-        # Gather context concurrently
-        emails_task = self._email_svc.fetch_emails(user_id)
-        followup_task = self._followup_agent.check_pending_followups(
-            user_id, self._session
-        )
-        events_task = self._calendar_svc.get_upcoming_events(user_id, days=2)
-        analytics_task = self._analytics_svc.get_dashboard_stats(user_id)
-
-        results = await asyncio.gather(
-            emails_task,
-            followup_task,
-            events_task,
-            analytics_task,
-            return_exceptions=True,
-        )
-
-        emails_result, followup_result, events_result, analytics_result = results
+        # Gather context sequentially to avoid asyncpg InterfaceError on shared session
+        try:
+            emails_result = await self._email_svc.fetch_emails(user_id)
+        except Exception as e:
+            emails_result = e
+            
+        try:
+            followup_result = await self._followup_agent.check_pending_followups(user_id, self._session)
+        except Exception as e:
+            followup_result = e
+            
+        try:
+            events_result = await self._calendar_svc.get_upcoming_events(user_id, days=2)
+        except Exception as e:
+            events_result = e
+            
+        try:
+            analytics_result = await self._analytics_svc.get_dashboard_stats(user_id)
+        except Exception as e:
+            analytics_result = e
 
         # Handle partial failures
         if isinstance(emails_result, Exception):

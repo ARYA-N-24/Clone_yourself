@@ -111,6 +111,16 @@ class AnalyticsStats(BaseModel):
     events_created: int
 
 
+class DailyMetrics(BaseModel):
+    """Daily activity counts for charts."""
+
+    day: str
+    replies: int
+    events: int
+    classified: int
+    actions: int
+
+
 class AnalyticsEvent(BaseModel):
     """A single analytics event stored in the analytics_events table."""
 

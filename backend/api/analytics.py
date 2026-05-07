@@ -17,7 +17,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.api.auth import get_current_user, get_db
-from backend.schemas.pydantic_schemas import AnalyticsStats, User
+from backend.schemas.pydantic_schemas import AnalyticsStats, DailyMetrics, User
 from backend.services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
@@ -135,3 +135,28 @@ async def get_actions(
         counts,
     )
     return counts
+
+
+@router.get(
+    "/daily",
+    response_model=list[DailyMetrics],
+    summary="Get daily activity counts for charts",
+)
+async def get_daily(
+    period: str = "week",
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+) -> list[DailyMetrics]:
+    """
+    Return daily activity counts (replies, events, classifications) for the user.
+
+    Query params:
+        period: "week" (last 7 days, default) or "month" (last 30 days).
+    """
+    from backend.schemas.pydantic_schemas import DailyMetrics
+
+    user_id = str(current_user.id)
+    analytics_service = AnalyticsService(db)
+
+    metrics = await analytics_service.get_daily_metrics(user_id, period)
+    return metrics

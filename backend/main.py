@@ -17,10 +17,10 @@ from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
-from backend.api import auth, emails, calendar, dashboard, followup, analytics
+from backend.api import auth, emails, calendar, dashboard, followup, analytics, preferences
 from backend.utils.rate_limit import limiter  # shared instance used by route modules
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 # ---------------------------------------------------------------------------
@@ -78,6 +78,7 @@ app.include_router(calendar.router, prefix="/calendar", tags=["calendar"])
 app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
 app.include_router(followup.router, prefix="/followups", tags=["followup"])
 app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
+app.include_router(preferences.router, prefix="/preferences", tags=["preferences"])
 
 
 # ---------------------------------------------------------------------------

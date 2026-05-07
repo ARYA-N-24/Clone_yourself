@@ -14,6 +14,7 @@ Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8, 6.9, 13.3
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import uuid
 from dataclasses import dataclass
@@ -114,7 +115,11 @@ class CalendarService:
 
         access_token = decrypt_token(token_row.access_token)
         refresh_token = decrypt_token(token_row.refresh_token)
-        return access_token, refresh_token, token_row.token_expiry
+        token_expiry = token_row.token_expiry
+        if token_expiry and token_expiry.tzinfo is not None:
+            # google-auth expects a naive UTC datetime to compare with datetime.utcnow()
+            token_expiry = token_expiry.replace(tzinfo=None)
+        return access_token, refresh_token, token_expiry
 
     def _build_calendar_client(self, access_token: str, refresh_token: str, token_expiry: datetime):
         """
@@ -173,7 +178,7 @@ class CalendarService:
         return pref_row
 
     @staticmethod
-    def _fetch_calendar_events(
+    async def _fetch_calendar_events(
         calendar_client: Any,
         date_range: DateRange,
     ) -> list[dict]:
@@ -190,17 +195,14 @@ class CalendarService:
         time_min = date_range.start.astimezone(timezone.utc).isoformat()
         time_max = date_range.end.astimezone(timezone.utc).isoformat()
 
-        events_result = (
-            calendar_client.events()
-            .list(
-                calendarId="primary",
-                timeMin=time_min,
-                timeMax=time_max,
-                singleEvents=True,
-                orderBy="startTime",
-            )
-            .execute()
+        req = calendar_client.events().list(
+            calendarId="primary",
+            timeMin=time_min,
+            timeMax=time_max,
+            singleEvents=True,
+            orderBy="startTime",
         )
+        events_result = await asyncio.to_thread(req.execute)
         return events_result.get("items", [])
 
     @staticmethod
@@ -394,27 +396,15 @@ class CalendarService:
         try:
             access_token, refresh_token, token_expiry = await self._get_oauth_token(user_id)
             calendar_client = self._build_calendar_client(access_token, refresh_token, token_expiry)
-            existing_events = self._fetch_calendar_events(calendar_client, date_range)
+            existing_events = await self._fetch_calendar_events(calendar_client, date_range)
             self._last_source = "calendar"
         except Exception as exc:
-            logger.warning(
-                "Calendar API unavailable for user %s (%s); falling back to mock slots.",
+            logger.error(
+                "Calendar API unavailable for user %s (%s); raising error instead of mock slots.",
                 user_id,
                 exc,
             )
-            use_mock = True
-            self._last_source = "mock"
-
-        if use_mock:
-            mock_slots = self._generate_mock_slots(date_range, prefs)
-            # Attach mock metadata via a custom attribute on each slot
-            # (metadata is surfaced to callers via _last_source)
-            logger.info(
-                "Returning %d mock free slots for user %s (source=mock, reason=calendar_unavailable).",
-                len(mock_slots),
-                user_id,
-            )
-            return mock_slots
+            raise HTTPException(status_code=503, detail="Google Calendar API is unavailable. Please check your Google OAuth connection.") from exc
 
         # --- Free slot algorithm ---
         free_slots: list[TimeSlot] = []
@@ -517,6 +507,7 @@ class CalendarService:
         user_id: str,
         slot: MeetingSlot,
         attendees: list[str],
+        email_id: str | None = None,
     ) -> CalendarEvent:
         """
         Create a Google Calendar event for the given meeting slot.
@@ -529,6 +520,7 @@ class CalendarService:
             user_id: UUID string of the user.
             slot: MeetingSlot containing the time window and reason.
             attendees: List of attendee email addresses.
+            email_id: Optional UUID of the email that triggered this meeting.
 
         Returns:
             CalendarEvent Pydantic model for the created event.
@@ -539,6 +531,7 @@ class CalendarService:
         Requirements: 6.8, 6.9
         """
         user_uuid = UUID(user_id)
+        email_uuid = UUID(email_id) if email_id else None
 
         # Build the event body
         title = slot.reason or "Meeting"
@@ -566,11 +559,11 @@ class CalendarService:
             access_token, refresh_token, token_expiry = await self._get_oauth_token(user_id)
             calendar_client = self._build_calendar_client(access_token, refresh_token, token_expiry)
 
-            created = (
+            insert_req = (
                 calendar_client.events()
                 .insert(calendarId="primary", body=event_body, sendUpdates="all")
-                .execute()
             )
+            created = await asyncio.to_thread(insert_req.execute)
             gcal_event_id = created.get("id")
             logger.info(
                 "Created Google Calendar event %s for user %s.", gcal_event_id, user_id
@@ -597,11 +590,21 @@ class CalendarService:
             start_time=start_dt,
             end_time=end_dt,
             attendees=attendees,
-            source_email_id=None,
+            source_email_id=email_uuid,
             created_by_ai=True,
             created_at=now_utc,
         )
         self._session.add(orm_event)
+
+        # Mark the original email as replied/processed
+        if email_uuid:
+            from backend.models.db_models import EmailORM
+            stmt = select(EmailORM).where(EmailORM.id == email_uuid)
+            result = await self._session.execute(stmt)
+            email_row = result.scalar_one_or_none()
+            if email_row:
+                email_row.is_replied = True
+
         await self._session.commit()
         await self._session.refresh(orm_event)
 
@@ -625,7 +628,7 @@ class CalendarService:
             start_time=start_dt,
             end_time=end_dt,
             attendees=attendees,
-            source_email_id=None,
+            source_email_id=email_uuid,
             created_by_ai=True,
             created_at=now_utc,
         )

@@ -13,8 +13,10 @@ Requirements: 6.1, 6.6, 6.7, 6.8, 12.4
 
 import logging
 import os
+import uuid
 from datetime import datetime, timezone
-from typing import List
+from typing import List, Optional
+from uuid import UUID
 
 import openai
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -205,6 +207,7 @@ class CreateCalendarEventRequest(BaseModel):
 
     slot: MeetingSlot
     attendees: List[str]
+    email_id: Optional[UUID] = None
 
 
 @router.post(
@@ -223,6 +226,7 @@ async def create_calendar_event(
     Request body:
     - ``slot``: MeetingSlot containing the time window and reason.
     - ``attendees``: List of attendee email addresses.
+    - ``email_id``: Optional UUID of the email that triggered this meeting.
 
     Persists the event to the calendar_events table and records an analytics
     event. Returns the created CalendarEvent.
@@ -236,6 +240,7 @@ async def create_calendar_event(
         user_id=user_id,
         slot=body.slot,
         attendees=body.attendees,
+        email_id=str(body.email_id) if body.email_id else None,
     )
 
     logger.info(

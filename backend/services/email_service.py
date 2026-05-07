@@ -18,6 +18,7 @@ Requirements: 4.2, 4.3, 4.4, 4.5, 5.1, 5.2, 5.3, 5.4, 13.2
 from __future__ import annotations
 
 import base64
+import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone
@@ -27,7 +28,7 @@ from uuid import UUID
 
 import openai
 from fastapi import HTTPException
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -45,7 +46,6 @@ from backend.services.analytics_service import AnalyticsService
 from backend.services.behavior_engine import BehaviorEngine
 from backend.services.decision_engine import DecisionEngine
 from backend.utils.faiss_store import FAISSStore
-from backend.utils.mock_data import MOCK_EMAILS
 from backend.utils.token_encryption import decrypt_token
 
 logger = logging.getLogger(__name__)
@@ -207,7 +207,7 @@ class EmailService:
             is_replied=False,
         )
 
-    async def _upsert_email(self, user_id: str, email: EmailMessage) -> None:
+    async def _upsert_email(self, user_id: str, email: EmailMessage) -> UUID:
         """
         Upsert an EmailMessage into the emails table.
 
@@ -241,12 +241,16 @@ class EmailService:
                     "body_text": email.body_text,
                     "classification": email.classification,
                     "category": email.category,
-                    "is_replied": email.is_replied,
+                    # Preserve is_replied=True if already set in DB
+                    "is_replied": or_(EmailORM.is_replied, email.is_replied),
                 },
             )
+            .returning(EmailORM.id)
         )
-        await self._session.execute(stmt)
+        result = await self._session.execute(stmt)
+        actual_id = result.scalar()
         await self._session.commit()
+        return actual_id
 
     async def _get_execution_mode(self, user_id: str) -> str:
         """
@@ -298,37 +302,39 @@ class EmailService:
             gmail = self._build_gmail_client(access_token, refresh_token)
 
             # List message IDs from inbox
-            list_response = (
+            list_req = (
                 gmail.users()
                 .messages()
                 .list(userId="me", maxResults=max_results, labelIds=["INBOX"])
-                .execute()
             )
+            list_response = await asyncio.to_thread(list_req.execute)
             messages = list_response.get("messages", [])
 
             for msg_ref in messages:
                 msg_id = msg_ref["id"]
-                raw_msg = (
+                get_req = (
                     gmail.users()
                     .messages()
                     .get(userId="me", id=msg_id, format="full")
-                    .execute()
                 )
+                raw_msg = await asyncio.to_thread(get_req.execute)
                 email = self._parse_gmail_message(raw_msg, user_id)
                 emails.append(email)
 
         except Exception as exc:
-            logger.warning(
-                "Gmail API unavailable for user %s (%s); falling back to mock data.",
+            logger.error(
+                "Gmail API unavailable for user %s (%s); raising error instead of mock data.",
                 user_id,
                 exc,
             )
-            emails = list(MOCK_EMAILS)
+            raise HTTPException(status_code=503, detail="Gmail API is unavailable. Please check your Google OAuth connection.") from exc
 
         # Upsert all fetched emails into the database
         for email in emails:
             try:
-                await self._upsert_email(user_id, email)
+                stable_id = await self._upsert_email(user_id, email)
+                # Update the email object in the list with the stable ID from the DB
+                email.id = stable_id
             except Exception as exc:
                 logger.warning(
                     "Failed to upsert email %s for user %s: %s",
@@ -525,6 +531,91 @@ class EmailService:
         return draft
 
     # ------------------------------------------------------------------
+    # create_manual_draft
+    # ------------------------------------------------------------------
+
+    async def create_manual_draft(
+        self, user_id: str, email_id: str, text: str = ""
+    ) -> ReplyDraft:
+        """
+        Create a manual reply draft in the database.
+
+        Args:
+            user_id: UUID string of the user.
+            email_id: UUID string of the email to reply to.
+            text: Initial text for the draft (default empty).
+
+        Returns:
+            ReplyDraft with status="pending".
+        """
+        user_uuid = UUID(user_id)
+        email_uuid = UUID(email_id)
+        draft_id = uuid.uuid4()
+
+        draft_orm = ReplyDraftORM(
+            id=draft_id,
+            user_id=user_uuid,
+            email_id=email_uuid,
+            draft_text=text,
+            status="pending",
+        )
+        self._session.add(draft_orm)
+        await self._session.commit()
+
+        logger.info(
+            "Created manual reply draft %s for email %s (user %s).",
+            draft_id,
+            email_id,
+            user_id,
+        )
+
+        return ReplyDraft(
+            id=draft_id,
+            email_id=email_uuid,
+            draft_text=text,
+            status="pending",
+        )
+
+    # ------------------------------------------------------------------
+    # update_reply_draft
+    # ------------------------------------------------------------------
+
+    async def update_reply_draft(
+        self, user_id: str, draft_id: str, text: str
+    ) -> ReplyDraft:
+        """
+        Update the text of an existing reply draft.
+
+        Args:
+            user_id: UUID string of the user.
+            draft_id: UUID string of the draft to update.
+            text: New draft text.
+
+        Returns:
+            Updated ReplyDraft object.
+        """
+        user_uuid = UUID(user_id)
+        draft_uuid = UUID(draft_id)
+
+        stmt = select(ReplyDraftORM).where(
+            ReplyDraftORM.id == draft_uuid,
+            ReplyDraftORM.user_id == user_uuid,
+        )
+        result = await self._session.execute(stmt)
+        draft_row = result.scalar_one_or_none()
+
+        if not draft_row:
+            raise HTTPException(status_code=404, detail="Reply draft not found.")
+
+        draft_row.draft_text = text
+        await self._session.commit()
+        await self._session.refresh(draft_row)
+
+        logger.info("Updated draft %s for user %s.", draft_id, user_id)
+
+        return ReplyDraft.model_validate(draft_row)
+
+    # ------------------------------------------------------------------
     # send_reply
     # ------------------------------------------------------------------
 
@@ -550,16 +641,6 @@ class EmailService:
 
         Requirements: 4.5
         """
-        execution_mode = await self._get_execution_mode(user_id)
-        if execution_mode != "auto":
-            raise HTTPException(
-                status_code=403,
-                detail=(
-                    f"Cannot send reply: execution mode is '{execution_mode}'. "
-                    "Draft must be approved before sending."
-                ),
-            )
-
         # Fetch the draft
         user_uuid = UUID(user_id)
         draft_uuid = UUID(draft_id)
@@ -618,6 +699,11 @@ class EmailService:
         # Update draft status to "sent"
         draft_row.status = "sent"
         draft_row.sent_at = datetime.now(tz=timezone.utc)
+        
+        # Mark the original email as replied
+        if email_row:
+            email_row.is_replied = True
+            
         await self._session.commit()
 
         # Record analytics event

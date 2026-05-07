@@ -12,6 +12,7 @@ import { getSession } from 'next-auth/react'
 import type {
   AnalyticsStats,
   DailyBrief,
+  DailyMetrics,
   DashboardPayload,
   Email,
   FollowupSuggestion,
@@ -34,8 +35,40 @@ const apiClient: AxiosInstance = axios.create({
 })
 
 /**
- * Request interceptor — attaches Authorization: Bearer <token> from the
- * NextAuth session to every outgoing request.
+ * Recursively converts object keys from snake_case to camelCase.
+ */
+function toCamelCase(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => toCamelCase(v))
+  } else if (obj !== null && obj.constructor === Object) {
+    return Object.keys(obj).reduce((result, key) => {
+      const camelKey = key.replace(/_([a-z0-9])/g, g => g[1].toUpperCase())
+      result[camelKey] = toCamelCase(obj[key])
+      return result
+    }, {} as Record<string, any>)
+  }
+  return obj
+}
+
+/**
+ * Recursively converts object keys from camelCase to snake_case.
+ */
+function toSnakeCase(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj.map(v => toSnakeCase(v))
+  } else if (obj !== null && obj.constructor === Object) {
+    return Object.keys(obj).reduce((result, key) => {
+      const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
+      result[snakeKey] = toSnakeCase(obj[key])
+      return result
+    }, {} as Record<string, any>)
+  }
+  return obj
+}
+
+/**
+ * Request interceptor — attaches Authorization: Bearer <token> and
+ * converts data to snake_case.
  */
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
@@ -45,7 +78,25 @@ apiClient.interceptors.request.use(
       config.headers = config.headers ?? {}
       config.headers['Authorization'] = `Bearer ${token}`
     }
+
+    if (config.data && config.headers?.['Content-Type'] === 'application/json') {
+      config.data = toSnakeCase(config.data)
+    }
+
     return config
+  },
+  (error) => Promise.reject(error),
+)
+
+/**
+ * Response interceptor — converts all snake_case keys to camelCase.
+ */
+apiClient.interceptors.response.use(
+  (response) => {
+    if (response.data && response.headers['content-type']?.includes('application/json')) {
+      response.data = toCamelCase(response.data)
+    }
+    return response
   },
   (error) => Promise.reject(error),
 )
@@ -76,6 +127,25 @@ export async function getEmail(emailId: string): Promise<Email> {
 export async function generateReply(emailId: string): Promise<ReplyDraft> {
   const { data } = await apiClient.post<ReplyDraft>('/emails/generate-reply', {
     email_id: emailId,
+  })
+  return data
+}
+
+/** Create a manual (empty) reply draft for the specified email. */
+export async function createManualDraft(emailId: string): Promise<ReplyDraft> {
+  const { data } = await apiClient.post<ReplyDraft>(
+    `/emails/${emailId}/manual-draft`,
+  )
+  return data
+}
+
+/** Update an existing reply draft with new text. */
+export async function updateReplyDraft(
+  draftId: string,
+  text: string,
+): Promise<ReplyDraft> {
+  const { data } = await apiClient.put<ReplyDraft>(`/emails/drafts/${draftId}`, {
+    draft_text: text,
   })
   return data
 }
@@ -121,10 +191,12 @@ export async function suggestMeetingTimes(emailId: string): Promise<MeetingSlot[
 export async function createCalendarEvent(
   slot: MeetingSlot,
   attendees: string[],
+  emailId?: string,
 ): Promise<CalendarEvent> {
   const { data } = await apiClient.post<CalendarEvent>('/calendar/events', {
     slot,
     attendees,
+    emailId,
   })
   return data
 }
@@ -196,6 +268,16 @@ export async function getActionCounts(
     '/analytics/actions',
     { params: { period } },
   )
+  return data
+}
+
+/** Fetch daily metrics for the analytics chart. */
+export async function getDailyMetrics(
+  period: 'week' | 'month' = 'week',
+): Promise<DailyMetrics[]> {
+  const { data } = await apiClient.get<DailyMetrics[]>('/analytics/daily', {
+    params: { period },
+  })
   return data
 }
 
