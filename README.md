@@ -138,9 +138,6 @@ PostgreSQL
 
 
 AI Layer
-
-Ollama (Phi-3 / Mistral)
-
 OpenAI compatible architecture
 
 
@@ -220,9 +217,6 @@ TOKEN_ENCRYPTION_KEY=
 
 FRONTEND_URL=http://localhost:3000
 
-OLLAMA_BASE_URL=http://localhost:11434
-OLLAMA_MODEL=phi3
-
 
 ---
 
@@ -281,29 +275,6 @@ npm run dev
 Frontend runs on:
 
 http://localhost:3000
-
-
----
-
-Ollama Setup (Local AI)
-
-Install Ollama
-
-Download: Ollama
-
-
----
-
-Pull AI Model
-
-ollama pull phi3
-
-
----
-
-Run Model
-
-ollama run phi3
 
 
 ---
