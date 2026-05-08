@@ -93,21 +93,18 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 # Routers
 # ---------------------------------------------------------------------------
 
-# On Vercel, we often want to prefix all routes with /api
-api_prefix = "/api" if os.getenv("VERCEL") else ""
-
-app.include_router(auth.router, prefix=f"{api_prefix}/auth", tags=["auth"])
-app.include_router(emails.router, prefix=f"{api_prefix}/emails", tags=["emails"])
-app.include_router(calendar.router, prefix=f"{api_prefix}/calendar", tags=["calendar"])
-app.include_router(dashboard.router, prefix=f"{api_prefix}/dashboard", tags=["dashboard"])
-app.include_router(followup.router, prefix=f"{api_prefix}/followups", tags=["followup"])
-app.include_router(analytics.router, prefix=f"{api_prefix}/analytics", tags=["analytics"])
-app.include_router(preferences.router, prefix=f"{api_prefix}/preferences", tags=["preferences"])
+app.include_router(auth.router, prefix="/auth", tags=["auth"])
+app.include_router(emails.router, prefix="/emails", tags=["emails"])
+app.include_router(calendar.router, prefix="/calendar", tags=["calendar"])
+app.include_router(dashboard.router, prefix="/dashboard", tags=["dashboard"])
+app.include_router(followup.router, prefix="/followups", tags=["followup"])
+app.include_router(analytics.router, prefix="/analytics", tags=["analytics"])
+app.include_router(preferences.router, prefix="/preferences", tags=["preferences"])
 
 
 # ---------------------------------------------------------------------------
 # Health check
 # ---------------------------------------------------------------------------
-@app.get(f"{api_prefix}/health", tags=["health"])
+@app.get("/health", tags=["health"])
 async def health_check():
     return {"status": "ok"}
