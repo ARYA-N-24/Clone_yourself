@@ -120,7 +120,7 @@ export default function DashboardPage() {
               {/* Analytics widget */}
               <section aria-label="Analytics">
                 <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
-                  This Week's Impact
+                  This Week&apos;s Impact
                 </h2>
                 {isLoading ? (
                   <div className="animate-pulse space-y-3">
