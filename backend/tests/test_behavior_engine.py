@@ -18,9 +18,9 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from backend.models.db_models import AnalyticsEvent, UserPreference
-from backend.schemas.pydantic_schemas import UserPreferences
-from backend.services.behavior_engine import BehaviorEngine, UserAction
+from models.db_models import AnalyticsEvent, UserPreference
+from schemas.pydantic_schemas import UserPreferences
+from services.behavior_engine import BehaviorEngine, UserAction
 
 
 # ---------------------------------------------------------------------------

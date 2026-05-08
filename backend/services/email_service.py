@@ -32,21 +32,21 @@ from sqlalchemy import or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models.db_models import AnalyticsEvent as AnalyticsEventORM
-from backend.models.db_models import Email as EmailORM
-from backend.models.db_models import OAuthToken, ReplyDraft as ReplyDraftORM
-from backend.models.db_models import UserPreference
-from backend.schemas.pydantic_schemas import (
+from models.db_models import AnalyticsEvent as AnalyticsEventORM
+from models.db_models import Email as EmailORM
+from models.db_models import OAuthToken, ReplyDraft as ReplyDraftORM
+from models.db_models import UserPreference
+from schemas.pydantic_schemas import (
     AnalyticsEvent,
     EmailMessage,
     ReplyDraft,
     StyleContext,
 )
-from backend.services.analytics_service import AnalyticsService
-from backend.services.behavior_engine import BehaviorEngine
-from backend.services.decision_engine import DecisionEngine
-from backend.utils.faiss_store import FAISSStore
-from backend.utils.token_encryption import decrypt_token
+from services.analytics_service import AnalyticsService
+from services.behavior_engine import BehaviorEngine
+from services.decision_engine import DecisionEngine
+from utils.faiss_store import FAISSStore
+from utils.token_encryption import decrypt_token
 
 logger = logging.getLogger(__name__)
 

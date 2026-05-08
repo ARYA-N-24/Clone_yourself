@@ -16,16 +16,16 @@ import openai
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.auth import get_current_user, get_db
-from backend.schemas.pydantic_schemas import DashboardPayload, User, DailyBrief
-from backend.services.analytics_service import AnalyticsService
-from backend.services.behavior_engine import BehaviorEngine
-from backend.services.calendar_service import CalendarService
-from backend.services.decision_engine import DecisionEngine
-from backend.services.email_service import EmailService
-from backend.services.followup_agent import FollowupAgent
-from backend.services.task_orchestrator import TaskOrchestrator
-from backend.utils.faiss_store import FAISSStore
+from api.auth import get_current_user, get_db
+from schemas.pydantic_schemas import DashboardPayload, User, DailyBrief
+from services.analytics_service import AnalyticsService
+from services.behavior_engine import BehaviorEngine
+from services.calendar_service import CalendarService
+from services.decision_engine import DecisionEngine
+from services.email_service import EmailService
+from services.followup_agent import FollowupAgent
+from services.task_orchestrator import TaskOrchestrator
+from utils.faiss_store import FAISSStore
 
 logger = logging.getLogger(__name__)
 

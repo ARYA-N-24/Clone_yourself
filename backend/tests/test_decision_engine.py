@@ -21,7 +21,7 @@ from unittest.mock import AsyncMock, MagicMock, patch, call
 import openai
 import pytest
 
-from backend.schemas.pydantic_schemas import (
+from schemas.pydantic_schemas import (
     AnalyticsStats,
     BriefContext,
     CalendarEvent,
@@ -31,7 +31,7 @@ from backend.schemas.pydantic_schemas import (
     TimeSlot,
     UserPreferences,
 )
-from backend.services.decision_engine import DecisionEngine
+from services.decision_engine import DecisionEngine
 
 
 # ---------------------------------------------------------------------------

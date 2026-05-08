@@ -24,9 +24,9 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.auth import get_current_user, get_db
-from backend.models.db_models import Email as EmailORM
-from backend.schemas.pydantic_schemas import (
+from api.auth import get_current_user, get_db
+from models.db_models import Email as EmailORM
+from schemas.pydantic_schemas import (
     CalendarEvent,
     CalendarSuggestRequest,
     EmailMessage,
@@ -34,10 +34,10 @@ from backend.schemas.pydantic_schemas import (
     TimeSlot,
     User,
 )
-from backend.services.calendar_service import CalendarService, DateRange
-from backend.services.decision_engine import DecisionEngine
-from backend.services.analytics_service import AnalyticsService
-from backend.utils.rate_limit import limiter
+from services.calendar_service import CalendarService, DateRange
+from services.decision_engine import DecisionEngine
+from services.analytics_service import AnalyticsService
+from utils.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 

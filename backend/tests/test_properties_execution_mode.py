@@ -19,12 +19,12 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from backend.schemas.pydantic_schemas import (
+from schemas.pydantic_schemas import (
     AnalyticsStats,
     ReplyDraft,
     UserPreferences,
 )
-from backend.services.task_orchestrator import TaskOrchestrator
+from services.task_orchestrator import TaskOrchestrator
 
 
 # ---------------------------------------------------------------------------

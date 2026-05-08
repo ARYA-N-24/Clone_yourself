@@ -18,7 +18,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from backend.services.analytics_service import (
+from services.analytics_service import (
     AnalyticsService,
     TIME_SAVED_PER_EVENT,
     TIME_SAVED_PER_REPLY,

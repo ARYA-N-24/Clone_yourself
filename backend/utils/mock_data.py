@@ -13,7 +13,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from backend.schemas.pydantic_schemas import (
+from schemas.pydantic_schemas import (
     AnalyticsStats,
     CalendarEvent,
     EmailMessage,
@@ -198,7 +198,7 @@ def seed_demo_data(db_session) -> dict:  # type: ignore[type-arg]
     Returns:
         A summary dict with counts of inserted records.
     """
-    from backend.models.db_models import (
+    from models.db_models import (
         User,
         UserPreference,
         Email,

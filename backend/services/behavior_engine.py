@@ -25,9 +25,9 @@ import openai
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models.db_models import AnalyticsEvent, Email, UserPreference
-from backend.schemas.pydantic_schemas import StyleContext, UserPreferences
-from backend.utils.faiss_store import FAISSStore
+from models.db_models import AnalyticsEvent, Email, UserPreference
+from schemas.pydantic_schemas import StyleContext, UserPreferences
+from utils.faiss_store import FAISSStore
 
 logger = logging.getLogger(__name__)
 
@@ -210,7 +210,7 @@ class BehaviorEngine:
         email_rows = result.scalars().all()
 
         # Convert ORM models to Pydantic EmailMessage models
-        from backend.schemas.pydantic_schemas import EmailMessage
+        from schemas.pydantic_schemas import EmailMessage
 
         similar_emails = [EmailMessage.model_validate(row) for row in email_rows]
 

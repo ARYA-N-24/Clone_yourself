@@ -27,9 +27,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models.db_models import ReplyDraft as ReplyDraftORM
-from backend.models.db_models import UserPreference
-from backend.schemas.pydantic_schemas import (
+from models.db_models import ReplyDraft as ReplyDraftORM
+from models.db_models import UserPreference
+from schemas.pydantic_schemas import (
     AnalyticsEvent,
     AnalyticsStats,
     BriefContext,
@@ -39,12 +39,12 @@ from backend.schemas.pydantic_schemas import (
     FollowupSuggestion,
     ReplyDraft,
 )
-from backend.services.analytics_service import AnalyticsService
-from backend.services.behavior_engine import BehaviorEngine
-from backend.services.calendar_service import CalendarService
-from backend.services.decision_engine import DecisionEngine
-from backend.services.email_service import EmailService
-from backend.services.followup_agent import FollowupAgent
+from services.analytics_service import AnalyticsService
+from services.behavior_engine import BehaviorEngine
+from services.calendar_service import CalendarService
+from services.decision_engine import DecisionEngine
+from services.email_service import EmailService
+from services.followup_agent import FollowupAgent
 
 logger = logging.getLogger(__name__)
 

@@ -20,8 +20,8 @@ import pytest
 from hypothesis import given, settings, assume
 from hypothesis import strategies as st
 
-from backend.schemas.pydantic_schemas import TimeSlot
-from backend.services.calendar_service import CalendarService, DateRange
+from schemas.pydantic_schemas import TimeSlot
+from services.calendar_service import CalendarService, DateRange
 
 
 # ---------------------------------------------------------------------------

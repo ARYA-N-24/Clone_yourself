@@ -12,7 +12,7 @@ Tests cover:
 
 import pytest
 
-from backend.utils.prompts import inject, load_prompt_template
+from utils.prompts import inject, load_prompt_template
 
 # ---------------------------------------------------------------------------
 # Known template names

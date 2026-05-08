@@ -20,11 +20,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from fastapi import HTTPException
 
-from backend.models.db_models import Email as EmailORM
-from backend.models.db_models import Followup as FollowupORM
-from backend.models.db_models import UserPreference
-from backend.schemas.pydantic_schemas import FollowupSuggestion
-from backend.services.followup_agent import FollowupAgent
+from models.db_models import Email as EmailORM
+from models.db_models import Followup as FollowupORM
+from models.db_models import UserPreference
+from schemas.pydantic_schemas import FollowupSuggestion
+from services.followup_agent import FollowupAgent
 
 
 # ---------------------------------------------------------------------------

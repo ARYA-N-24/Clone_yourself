@@ -31,8 +31,8 @@ SYNC_URL = (
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from backend.models.db_models import Base
-from backend.utils.mock_data import seed_demo_data
+from models.db_models import Base
+from utils.mock_data import seed_demo_data
 
 engine = create_engine(SYNC_URL, echo=False)
 

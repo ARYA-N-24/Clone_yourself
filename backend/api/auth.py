@@ -33,10 +33,10 @@ from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from backend.models.db_models import OAuthToken, User
-from backend.schemas.pydantic_schemas import TokenResponse
-from backend.schemas.pydantic_schemas import User as UserSchema
-from backend.utils.token_encryption import decrypt_token, encrypt_token
+from models.db_models import OAuthToken, User
+from schemas.pydantic_schemas import TokenResponse
+from schemas.pydantic_schemas import User as UserSchema
+from utils.token_encryption import decrypt_token, encrypt_token
 
 # ---------------------------------------------------------------------------
 # Router

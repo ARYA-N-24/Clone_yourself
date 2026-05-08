@@ -23,10 +23,10 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.auth import get_current_user, get_db
-from backend.schemas.pydantic_schemas import FollowupSuggestion, ReplyDraft, User
-from backend.services.decision_engine import DecisionEngine
-from backend.services.followup_agent import FollowupAgent
+from api.auth import get_current_user, get_db
+from schemas.pydantic_schemas import FollowupSuggestion, ReplyDraft, User
+from services.decision_engine import DecisionEngine
+from services.followup_agent import FollowupAgent
 
 logger = logging.getLogger(__name__)
 

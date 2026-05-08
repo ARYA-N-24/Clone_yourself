@@ -27,19 +27,19 @@ from fastapi import HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models.db_models import AnalyticsEvent as AnalyticsEventORM
-from backend.models.db_models import CalendarEvent as CalendarEventORM
-from backend.models.db_models import OAuthToken, UserPreference
-from backend.schemas.pydantic_schemas import (
+from models.db_models import AnalyticsEvent as AnalyticsEventORM
+from models.db_models import CalendarEvent as CalendarEventORM
+from models.db_models import OAuthToken, UserPreference
+from schemas.pydantic_schemas import (
     AnalyticsEvent,
     CalendarEvent,
     EmailMessage,
     MeetingSlot,
     TimeSlot,
 )
-from backend.services.decision_engine import DecisionEngine
-from backend.utils.token_encryption import decrypt_token
-from backend.services.analytics_service import AnalyticsService
+from services.decision_engine import DecisionEngine
+from utils.token_encryption import decrypt_token
+from services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
 
@@ -602,7 +602,7 @@ class CalendarService:
 
         # Mark the original email as replied/processed
         if email_uuid:
-            from backend.models.db_models import EmailORM
+            from models.db_models import EmailORM
             stmt = select(EmailORM).where(EmailORM.id == email_uuid)
             result = await self._session.execute(stmt)
             email_row = result.scalar_one_or_none()
@@ -617,7 +617,7 @@ class CalendarService:
         )
 
         # Record analytics event
-        from backend.schemas.pydantic_schemas import AnalyticsEvent
+        from schemas.pydantic_schemas import AnalyticsEvent
         await self._analytics.record_event(
             user_id=user_id,
             event=AnalyticsEvent(

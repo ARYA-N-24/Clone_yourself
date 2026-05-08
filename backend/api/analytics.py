@@ -16,9 +16,9 @@ import logging
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.auth import get_current_user, get_db
-from backend.schemas.pydantic_schemas import AnalyticsStats, DailyMetrics, User
-from backend.services.analytics_service import AnalyticsService
+from api.auth import get_current_user, get_db
+from schemas.pydantic_schemas import AnalyticsStats, DailyMetrics, User
+from services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ async def get_daily(
     Query params:
         period: "week" (last 7 days, default) or "month" (last 30 days).
     """
-    from backend.schemas.pydantic_schemas import DailyMetrics
+    from schemas.pydantic_schemas import DailyMetrics
 
     user_id = str(current_user.id)
     analytics_service = AnalyticsService(db)

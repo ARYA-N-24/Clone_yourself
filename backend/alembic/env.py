@@ -30,7 +30,7 @@ if config.config_file_name is not None:
 
 # Import the SQLAlchemy Base and set target_metadata so Alembic can
 # detect schema changes for autogenerate support.
-from backend.models.db_models import Base  # noqa: E402
+from models.db_models import Base  # noqa: E402
 
 target_metadata = Base.metadata
 

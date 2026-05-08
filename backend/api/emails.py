@@ -21,29 +21,29 @@ import openai
 from fastapi import APIRouter, Depends, HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.auth import get_current_user, get_db
-from backend.schemas.pydantic_schemas import (
+from api.auth import get_current_user, get_db
+from schemas.pydantic_schemas import (
     EmailMessage,
     GenerateReplyRequest,
     ReplyDraft,
     User,
 )
-from backend.services.analytics_service import AnalyticsService
-from backend.services.behavior_engine import BehaviorEngine
-from backend.services.decision_engine import DecisionEngine
-from backend.services.email_service import EmailService
-from backend.utils.faiss_store import FAISSStore
+from services.analytics_service import AnalyticsService
+from services.behavior_engine import BehaviorEngine
+from services.decision_engine import DecisionEngine
+from services.email_service import EmailService
+from utils.faiss_store import FAISSStore
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
 # ---------------------------------------------------------------------------
-# Rate limiter — imported from backend.utils.rate_limit to avoid a circular
+# Rate limiter — imported from utils.rate_limit to avoid a circular
 # dependency with backend.main (which imports this module).
 # ---------------------------------------------------------------------------
 
-from backend.utils.rate_limit import limiter
+from utils.rate_limit import limiter
 
 
 # ---------------------------------------------------------------------------

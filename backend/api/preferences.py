@@ -15,9 +15,9 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.api.auth import get_current_user, get_db
-from backend.models.db_models import UserPreference
-from backend.schemas.pydantic_schemas import User, UserPreferences
+from api.auth import get_current_user, get_db
+from models.db_models import UserPreference
+from schemas.pydantic_schemas import User, UserPreferences
 
 logger = logging.getLogger(__name__)
 

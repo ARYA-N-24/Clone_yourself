@@ -22,7 +22,7 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from backend.utils.faiss_store import FAISSStore, EMBEDDING_DIM
+from utils.faiss_store import FAISSStore, EMBEDDING_DIM
 
 
 # ---------------------------------------------------------------------------

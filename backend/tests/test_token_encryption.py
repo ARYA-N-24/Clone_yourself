@@ -18,7 +18,7 @@ import secrets
 
 import pytest
 
-from backend.utils.token_encryption import decrypt_token, encrypt_token
+from utils.token_encryption import decrypt_token, encrypt_token
 
 
 # ---------------------------------------------------------------------------

@@ -27,7 +27,7 @@ from typing import Literal
 import openai
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.schemas.pydantic_schemas import (
+from schemas.pydantic_schemas import (
     BriefContext,
     DailyBrief,
     EmailMessage,
@@ -38,7 +38,7 @@ from backend.schemas.pydantic_schemas import (
     TimeSlot,
     UserPreferences,
 )
-from backend.utils.prompts import inject, load_prompt_template
+from utils.prompts import inject, load_prompt_template
 
 logger = logging.getLogger(__name__)
 

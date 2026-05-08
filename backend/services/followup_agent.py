@@ -24,11 +24,11 @@ from sqlalchemy import and_, or_, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models.db_models import Email as EmailORM
-from backend.models.db_models import Followup as FollowupORM
-from backend.models.db_models import UserPreference
-from backend.schemas.pydantic_schemas import EmailMessage, FollowupSuggestion
-from backend.services.decision_engine import DecisionEngine
+from models.db_models import Email as EmailORM
+from models.db_models import Followup as FollowupORM
+from models.db_models import UserPreference
+from schemas.pydantic_schemas import EmailMessage, FollowupSuggestion
+from services.decision_engine import DecisionEngine
 
 logger = logging.getLogger(__name__)
 

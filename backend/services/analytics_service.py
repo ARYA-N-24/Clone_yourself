@@ -22,8 +22,8 @@ from uuid import UUID
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.models.db_models import AnalyticsEvent as AnalyticsEventORM
-from backend.schemas.pydantic_schemas import AnalyticsEvent, AnalyticsStats
+from models.db_models import AnalyticsEvent as AnalyticsEventORM
+from schemas.pydantic_schemas import AnalyticsEvent, AnalyticsStats
 
 logger = logging.getLogger(__name__)
 
@@ -299,7 +299,7 @@ class AnalyticsService:
         Returns:
             List of DailyMetrics objects, one per day in the period.
         """
-        from backend.schemas.pydantic_schemas import DailyMetrics
+        from schemas.pydantic_schemas import DailyMetrics
 
         user_uuid = UUID(user_id)
         since = _period_start(period)

@@ -33,11 +33,11 @@ os.environ["GOOGLE_CLIENT_SECRET"] = "test-client-secret"
 os.environ["DATABASE_URL"] = "postgresql://test:test@localhost/test"
 os.environ["OPENAI_API_KEY"] = "test-openai-key"
 
-from backend.main import app
+from main import app
 import backend.api.auth as auth_module
 import backend.api.emails as emails_module
 import backend.api.dashboard as dashboard_module
-from backend.schemas.pydantic_schemas import (
+from schemas.pydantic_schemas import (
     AnalyticsStats,
     DashboardPayload,
     EmailMessage,

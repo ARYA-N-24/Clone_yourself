@@ -21,8 +21,8 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from backend.schemas.pydantic_schemas import EmailMessage, UserPreferences
-from backend.services.decision_engine import DecisionEngine
+from schemas.pydantic_schemas import EmailMessage, UserPreferences
+from services.decision_engine import DecisionEngine
 
 
 # ---------------------------------------------------------------------------

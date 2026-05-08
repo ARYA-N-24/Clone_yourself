@@ -31,7 +31,7 @@ os.environ.setdefault("GOOGLE_CLIENT_SECRET", "test-client-secret")
 os.environ.setdefault("DATABASE_URL", "postgresql://test:test@localhost/test")
 os.environ.setdefault("OPENAI_API_KEY", "test-openai-key")
 
-from backend.main import app
+from main import app
 import backend.api.auth as auth_module
 
 

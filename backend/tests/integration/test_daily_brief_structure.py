@@ -18,7 +18,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from backend.schemas.pydantic_schemas import (
+from schemas.pydantic_schemas import (
     AnalyticsStats,
     BriefContext,
     CalendarEvent,
@@ -26,7 +26,7 @@ from backend.schemas.pydantic_schemas import (
     EmailMessage,
     FollowupSuggestion,
 )
-from backend.services.decision_engine import DecisionEngine
+from services.decision_engine import DecisionEngine
 
 
 # ---------------------------------------------------------------------------
