@@ -57,7 +57,8 @@ export default function CalendarSuggestionPanel({
       await createCalendarEvent(slot, attendees, emailId)
       setConfirmedIndex(index)
       onEventCreated?.(index)
-    } catch {
+    } catch (err) {
+      console.error('Failed to create calendar event:', err)
       setError('Failed to create calendar event. Please try again.')
     } finally {
       setLoadingIndex(null)

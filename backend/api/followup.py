@@ -52,7 +52,12 @@ class SnoozeRequest(BaseModel):
 def _make_followup_agent(session: AsyncSession) -> FollowupAgent:
     """Instantiate FollowupAgent with a DecisionEngine."""
     api_key = os.getenv("OPENAI_API_KEY")
-    openai_async_client = openai.AsyncOpenAI(api_key=api_key)
+    groq_base_url = "https://api.groq.com/openai/v1"
+    
+    openai_async_client = openai.AsyncOpenAI(
+        api_key=api_key,
+        base_url=groq_base_url
+    )
     decision_engine = DecisionEngine(
         openai_client=openai_async_client,
         session=session,

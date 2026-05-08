@@ -45,8 +45,16 @@ def _make_task_orchestrator(session: AsyncSession) -> TaskOrchestrator:
     FAISSStore defaults to the ./faiss_indexes/ directory.
     """
     api_key = os.getenv("OPENAI_API_KEY")
-    openai_sync_client = openai.OpenAI(api_key=api_key)
-    openai_async_client = openai.AsyncOpenAI(api_key=api_key)
+    groq_base_url = "https://api.groq.com/openai/v1"
+    
+    openai_sync_client = openai.OpenAI(
+        api_key=api_key,
+        base_url=groq_base_url
+    )
+    openai_async_client = openai.AsyncOpenAI(
+        api_key=api_key,
+        base_url=groq_base_url
+    )
 
     faiss_store = FAISSStore()
     analytics_service = AnalyticsService(session)
@@ -71,6 +79,7 @@ def _make_task_orchestrator(session: AsyncSession) -> TaskOrchestrator:
         session=session,
         decision_engine=decision_engine,
         openai_client=openai_sync_client,
+        analytics_service=analytics_service,
     )
     followup_agent = FollowupAgent(decision_engine=decision_engine)
 

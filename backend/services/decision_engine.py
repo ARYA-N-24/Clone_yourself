@@ -165,7 +165,7 @@ class DecisionEngine:
             openai.OpenAIError: For non-rate-limit API errors.
         """
         kwargs: dict = {
-            "model": "gpt-4o",
+            "model": "llama-3.1-8b-instant",
             "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt},
@@ -248,7 +248,7 @@ class DecisionEngine:
         Requirements: 3.1, 3.2, 3.5, 3.6, 4.1
         """
         method = "classify_email"
-        body = _sanitize_body(email.body_text or "")
+        body = _sanitize_body(email.body_text or "")[:1500]
         subject = email.subject or "(no subject)"
         sender = email.sender
 
@@ -316,7 +316,7 @@ class DecisionEngine:
         Requirements: 3.1, 4.1, 4.7, 4.8
         """
         method = "generate_reply"
-        body = _sanitize_body(email.body_text or "")
+        body = _sanitize_body(email.body_text or "")[:3000]
 
         # Format similar emails as examples text
         examples_parts: list[str] = []
@@ -373,7 +373,7 @@ class DecisionEngine:
         Requirements: 6.6
         """
         method = "suggest_meeting_slots"
-        body = _sanitize_body(email.body_text or "")
+        body = _sanitize_body(email.body_text or "")[:2000]
 
         # Serialize free slots to JSON for injection
         slots_data = [

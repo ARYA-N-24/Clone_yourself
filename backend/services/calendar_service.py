@@ -39,6 +39,7 @@ from backend.schemas.pydantic_schemas import (
 )
 from backend.services.decision_engine import DecisionEngine
 from backend.utils.token_encryption import decrypt_token
+from backend.services.analytics_service import AnalyticsService
 
 logger = logging.getLogger(__name__)
 
@@ -76,10 +77,12 @@ class CalendarService:
         session: AsyncSession,
         decision_engine: DecisionEngine,
         openai_client: openai.OpenAI,
+        analytics_service: AnalyticsService,
     ) -> None:
         self._session = session
         self._decision = decision_engine
         self._openai = openai_client
+        self._analytics = analytics_service
         # Tracks whether the last get_free_slots call used mock data
         self._last_source: str = "calendar"
 
@@ -548,8 +551,8 @@ class CalendarService:
 
         event_body = {
             "summary": title,
-            "start": {"dateTime": start_dt.isoformat(), "timeZone": "UTC"},
-            "end": {"dateTime": end_dt.isoformat(), "timeZone": "UTC"},
+            "start": {"dateTime": start_dt.isoformat()},
+            "end": {"dateTime": end_dt.isoformat()},
             "attendees": attendee_list,
         }
 
@@ -559,9 +562,10 @@ class CalendarService:
             access_token, refresh_token, token_expiry = await self._get_oauth_token(user_id)
             calendar_client = self._build_calendar_client(access_token, refresh_token, token_expiry)
 
+            send_updates_val = "all" if attendee_list else "none"
             insert_req = (
                 calendar_client.events()
-                .insert(calendarId="primary", body=event_body, sendUpdates="all")
+                .insert(calendarId="primary", body=event_body, sendUpdates=send_updates_val)
             )
             created = await asyncio.to_thread(insert_req.execute)
             gcal_event_id = created.get("id")
@@ -613,11 +617,17 @@ class CalendarService:
         )
 
         # Record analytics event
-        await self._record_analytics_event(
+        from backend.schemas.pydantic_schemas import AnalyticsEvent
+        await self._analytics.record_event(
             user_id=user_id,
-            event_type="event_created",
-            metadata={"event_id": str(event_id), "gcal_event_id": gcal_event_id},
-            time_saved_min=10.0,
+            event=AnalyticsEvent(
+                id=uuid.uuid4(),
+                user_id=user_uuid,
+                event_type="event_created",
+                metadata_={"event_id": str(event_id), "gcal_event_id": gcal_event_id},
+                time_saved_min=10.0,
+                created_at=now_utc,
+            ),
         )
 
         return CalendarEvent(

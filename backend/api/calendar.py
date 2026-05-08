@@ -36,6 +36,7 @@ from backend.schemas.pydantic_schemas import (
 )
 from backend.services.calendar_service import CalendarService, DateRange
 from backend.services.decision_engine import DecisionEngine
+from backend.services.analytics_service import AnalyticsService
 from backend.utils.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
@@ -55,18 +56,28 @@ def _make_calendar_service(session: AsyncSession) -> CalendarService:
     Uses the OPENAI_API_KEY environment variable for the OpenAI client.
     """
     api_key = os.getenv("OPENAI_API_KEY")
-    openai_sync_client = openai.OpenAI(api_key=api_key)
-    openai_async_client = openai.AsyncOpenAI(api_key=api_key)
+    groq_base_url = "https://api.groq.com/openai/v1"
+    
+    openai_sync_client = openai.OpenAI(
+        api_key=api_key,
+        base_url=groq_base_url
+    )
+    openai_async_client = openai.AsyncOpenAI(
+        api_key=api_key,
+        base_url=groq_base_url
+    )
 
     decision_engine = DecisionEngine(
         openai_client=openai_async_client,
         session=session,
     )
+    analytics_service = AnalyticsService(session)
 
     return CalendarService(
         session=session,
         decision_engine=decision_engine,
         openai_client=openai_sync_client,
+        analytics_service=analytics_service,
     )
 
 

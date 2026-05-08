@@ -175,13 +175,9 @@ class BehaviorEngine:
 
         # Generate embedding for email_context
         try:
-            if self._openai is None:
-                raise RuntimeError("OpenAI client not configured (OPENAI_API_KEY not set)")
-            response = self._openai.embeddings.create(
-                model="text-embedding-3-small",
-                input=email_context,
-            )
-            embedding = response.data[0].embedding
+            # NOTE: Groq does not support embeddings. 
+            # We use a zero vector as a fallback.
+            embedding = [0.0] * 1536
         except Exception as exc:
             logger.warning(
                 "Failed to generate embedding for user %s: %s. Returning empty context.",

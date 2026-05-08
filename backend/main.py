@@ -69,6 +69,26 @@ app.add_middleware(SlowAPIMiddleware)
 # Register the 429 handler for rate-limit violations
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+import json
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    with open("error_log.txt", "a") as f:
+        f.write(f"422 ERROR: {request.url} - {exc.errors()} - Body: {exc.body}\n")
+    return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+    return JSONResponse(status_code=500, content={"detail": str(exc)})
+
+from starlette.exceptions import HTTPException as StarletteHTTPException
+
+@app.exception_handler(StarletteHTTPException)
+async def http_exception_handler(request: Request, exc: StarletteHTTPException):
+    with open("error_log.txt", "a") as f:
+        f.write(f"HTTP ERROR: {request.url} - {exc.status_code} - {exc.detail}\n")
+    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+
 # ---------------------------------------------------------------------------
 # Routers
 # ---------------------------------------------------------------------------

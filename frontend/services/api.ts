@@ -40,7 +40,7 @@ const apiClient: AxiosInstance = axios.create({
 function toCamelCase(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(v => toCamelCase(v))
-  } else if (obj !== null && obj.constructor === Object) {
+  } else if (obj !== null && obj !== undefined && obj.constructor === Object) {
     return Object.keys(obj).reduce((result, key) => {
       const camelKey = key.replace(/_([a-z0-9])/g, g => g[1].toUpperCase())
       result[camelKey] = toCamelCase(obj[key])
@@ -56,12 +56,13 @@ function toCamelCase(obj: any): any {
 function toSnakeCase(obj: any): any {
   if (Array.isArray(obj)) {
     return obj.map(v => toSnakeCase(v))
-  } else if (obj !== null && obj.constructor === Object) {
-    return Object.keys(obj).reduce((result, key) => {
+  } else if (obj !== null && obj !== undefined && obj.constructor === Object) {
+    const snakeObj: Record<string, any> = {}
+    for (const key in obj) {
       const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`)
-      result[snakeKey] = toSnakeCase(obj[key])
-      return result
-    }, {} as Record<string, any>)
+      snakeObj[snakeKey] = toSnakeCase(obj[key])
+    }
+    return snakeObj
   }
   return obj
 }
@@ -83,13 +84,18 @@ apiClient.interceptors.request.use(
       config.data = toSnakeCase(config.data)
     }
 
+    console.log(`API Request: ${config.method?.toUpperCase()} ${config.url}`, config.data)
+
     return config
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    console.error('API Request Error:', error)
+    return Promise.reject(error)
+  },
 )
 
 /**
- * Response interceptor — converts all snake_case keys to camelCase.
+ * Response interceptor — converts all snake_case keys to camelCase and logs errors.
  */
 apiClient.interceptors.response.use(
   (response) => {
@@ -98,7 +104,15 @@ apiClient.interceptors.response.use(
     }
     return response
   },
-  (error) => Promise.reject(error),
+  (error) => {
+    console.error('API Response Error:', {
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
+    })
+    return Promise.reject(error)
+  },
 )
 
 // ─── Dashboard ───────────────────────────────────────────────────────────────

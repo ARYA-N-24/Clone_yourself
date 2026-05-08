@@ -408,6 +408,8 @@ class EmailService:
         classified: list[ClassifiedEmail] = []
 
         for email in emails:
+            # Add a small delay to avoid hitting Groq free tier RPM limits
+            await asyncio.sleep(1)
             try:
                 classification = await self._decision.classify_email(email, user_prefs)
             except Exception as exc:
@@ -752,11 +754,10 @@ class EmailService:
 
         # Step 1: Generate embedding
         try:
-            response = self._openai.embeddings.create(
-                model="text-embedding-3-small",
-                input=body_text,
-            )
-            embedding: list[float] = response.data[0].embedding
+            # NOTE: Groq does not support embeddings. 
+            # We use a zero vector as a fallback to avoid crashing.
+            # Real embeddings would require OpenAI or a local model like sentence-transformers.
+            embedding = [0.0] * 1536
         except Exception as exc:
             logger.error(
                 "Failed to generate embedding for email %s: %s", email.id, exc
